@@ -1,0 +1,40 @@
+{
+	"disposition": {
+		"assetList": {
+			"x": 0,
+			"y": 25,
+			"viewW": 165,
+			"viewH": 359,
+			"foldConfig": {
+				"maps": {}
+			}
+		},
+		"mapEditor": {
+			"x": 176,
+			"y": 25,
+			"viewW": 165,
+			"viewH": 142
+		},
+		"tilesheet": {
+			"x": 601,
+			"y": 25,
+			"viewW": 0,
+			"viewH": 0
+		},
+		"customTools": {
+			"x": 821,
+			"y": 438,
+			"viewW": 165,
+			"viewH": 100,
+			"foldConfig": {
+				"brush": {}
+			}
+		},
+		"palette": {
+			"x": 0,
+			"y": 378,
+			"viewW": 0,
+			"viewH": 0
+		}
+	}
+}
