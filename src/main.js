@@ -72,8 +72,8 @@ function drawPolygon(points, texture) {
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 
-// var map = getMap('map');
-var map = getMap('test');
+var map = getMap('map');
+// var map = getMap('test');
 var background = getMap('background');
 var mapEdges = new MapEdge(map);
 console.log(mapEdges);
@@ -101,22 +101,22 @@ require('pointer').onMove(function (x, y) {
 
 	cls();
 	draw(map);
-	drawPolygon(polygon);
+	// drawPolygon(polygon);
 
-	// offscreenTexture.clear();
-	// offscreenTexture.ctx.globalCompositeOperation = 'source-over';
-	// drawPolygon(polygon, offscreenTexture);
-	// offscreenTexture.draw(assets.halo, x - 100, y - 100);
-	// offscreenTexture.ctx.globalCompositeOperation = 'destination-in';
-	// offscreenTexture.draw(assets.lightMask, x - 100, y - 100);
+	offscreenTexture.clear();
+	offscreenTexture.ctx.globalCompositeOperation = 'source-over';
+	drawPolygon(polygon, offscreenTexture);
+	offscreenTexture.draw(assets.halo, x - 100, y - 100);
+	offscreenTexture.ctx.globalCompositeOperation = 'destination-in';
+	offscreenTexture.draw(assets.lightMask, x - 100, y - 100);
 
-	// $screen.clear();
-	// $screen.paper(0);
-	// draw(offscreenTexture, 0, 0);
-	// $screen.ctx.globalCompositeOperation = 'source-in';
-	// draw(background);
-	// $screen.ctx.globalCompositeOperation = 'source-over';
-	// draw(map);
+	$screen.clear();
+	$screen.paper(0);
+	draw(offscreenTexture, 0, 0);
+	$screen.ctx.globalCompositeOperation = 'source-in';
+	draw(background);
+	$screen.ctx.globalCompositeOperation = 'source-over';
+	draw(map);
 
 	sprite(107, ~~x - 4, ~~y - 4)
 });
