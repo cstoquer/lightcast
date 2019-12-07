@@ -1,62 +1,13 @@
 var SortedList = require('./SortedList');
 var Point      = require('./Point');
+var Segment    = require('./Segment');
 var constants  = require('./constants');
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-var SEGMENT_ORIENTATION = constants.SEGMENT_ORIENTATION;
-var POINT_TYPE          = constants.POINT_TYPE;
-var POINT_ORIENTATION   = constants.POINT_ORIENTATION;
-
-
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-var _points = {};
-
-function getPointId(x, y, orientation) {
-	return 'p:' + x + ':' + y + ':' + orientation;
-}
-
-function getPoint(x, y, orientation) {
-	// TODO: be able to separate the checkboard corners
-	var id = getPointId(x, y, orientation);
-	var point = _points[id];
-	if (!point) point = _points[id] = new Point(x, y, orientation, id);
-	return point;
-}
-
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-var _segmentId = 0;
-function getSegmentId() {
-	return 's:' + (_segmentId++);
-}
-
-function Segment(orientation) {
-	this.id          = getSegmentId();
-	this.orientation = orientation; // segment's normal direction
-	this.start       = null; // Point
-	this.end         = null; // Point
-	this.dx          = 0;
-	this.dy          = 0;
-}
-
-Segment.prototype.setEnd = function (x, y, orientation) {
-	var point = getPoint(x, y, orientation); // TODO: checkboard points
-	this.end  = point;
-	point.end = this;
-	this._computeDirection();
-};
-
-Segment.prototype.setStart = function (x, y, orientation) {
-	var point   = getPoint(x, y, orientation); // TODO: checkboard points
-	this.start  = point;
-	point.start = this;
-	this._computeDirection();
-};
-
-Segment.prototype._computeDirection = function () {
-	if (!this.start || !this.end) return;
-	this.dx = this.end.x - this.start.x;
-	this.dy = this.end.y - this.start.y;
-};
+var SEGMENT_ORIENTATION         = constants.SEGMENT_ORIENTATION;
+var POINT_TYPE                  = constants.POINT_TYPE;
+var POINT_ORIENTATION           = constants.POINT_ORIENTATION;
+var CAST_PER_CORNER_ORIENTATION = constants.CAST_PER_CORNER_ORIENTATION;
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 function MapEdge(map) {
@@ -75,9 +26,31 @@ MapEdge.prototype._hasTile = function (x, y) {
 	return !!this.map.get(x, y);
 };
 
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+function getPointId(x, y, orientation) {
+	return 'p:' + x + ':' + y + ':' + orientation;
+}
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+MapEdge.prototype.getSegmentId = function () {
+	return 's:' + (this._segmentId++);
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+MapEdge.prototype.getPoint = function(x, y, orientation) {
+	// TODO: be able to separate the checkboard corners
+	var id = getPointId(x, y, orientation);
+	var point = this.points[id];
+	if (!point) point = this.points[id] = new Point(x, y, orientation, id);
+	return point;
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 MapEdge.prototype._generate = function () {
 	var map = this.map;
-	this.points = _points = {};
+	this.points = {};
+	this._segmentId = 0;
+
 
 	// TODO: detect and store corner points
 
@@ -97,7 +70,7 @@ MapEdge.prototype._generate = function () {
 				if (tile && !before) {
 					// start up segment
 					var orientation = this._hasTile(x - 1, y) ? POINT_ORIENTATION.NE : POINT_ORIENTATION.NO;
-					currentSegment = new Segment(SEGMENT_ORIENTATION.UP);
+					currentSegment = new Segment(SEGMENT_ORIENTATION.UP, this);
 					currentSegment.setEnd(x, y, orientation);
 
 					// potential N-O corner
@@ -109,7 +82,7 @@ MapEdge.prototype._generate = function () {
 				} else if (!tile && before) {
 					// start down segment
 					var orientation = this._hasTile(x - 1, y) ? POINT_ORIENTATION.SE : POINT_ORIENTATION.SO;
-					currentSegment = new Segment(SEGMENT_ORIENTATION.DOWN);
+					currentSegment = new Segment(SEGMENT_ORIENTATION.DOWN, this);
 					currentSegment.setStart(x, y, orientation);
 
 					// potential S-O corner
@@ -143,7 +116,7 @@ MapEdge.prototype._generate = function () {
 					this.upSegments.push(currentSegment);
 
 					// and start down segment
-					currentSegment = new Segment(SEGMENT_ORIENTATION.DOWN);
+					currentSegment = new Segment(SEGMENT_ORIENTATION.DOWN, this);
 					currentSegment.setStart(x, y, POINT_ORIENTATION.SE);
 				}
 
@@ -168,7 +141,7 @@ MapEdge.prototype._generate = function () {
 					this.segments.push(currentSegment);
 
 					// and start up segment
-					currentSegment = new Segment(SEGMENT_ORIENTATION.UP);
+					currentSegment = new Segment(SEGMENT_ORIENTATION.UP, this);
 					currentSegment.setEnd(x, y, POINT_ORIENTATION.NE);
 				}
 
@@ -192,12 +165,12 @@ MapEdge.prototype._generate = function () {
 				if (tile && !before) {
 					// start left segment
 					var orientation = this._hasTile(x, y - 1) ? POINT_ORIENTATION.SO : POINT_ORIENTATION.NO;
-					currentSegment = new Segment(SEGMENT_ORIENTATION.LEFT);
+					currentSegment = new Segment(SEGMENT_ORIENTATION.LEFT, this);
 					currentSegment.setStart(x, y, orientation);
 				} else if (!tile && before) {
 					// start right segment
 					var orientation = this._hasTile(x, y - 1) ? POINT_ORIENTATION.SE : POINT_ORIENTATION.NE;
-					currentSegment = new Segment(SEGMENT_ORIENTATION.RIGHT);
+					currentSegment = new Segment(SEGMENT_ORIENTATION.RIGHT, this);
 					currentSegment.setEnd(x, y, orientation);
 				}
 
@@ -214,7 +187,7 @@ MapEdge.prototype._generate = function () {
 					this.segments.push(currentSegment);
 
 					// and start right segment
-					currentSegment = new Segment(SEGMENT_ORIENTATION.RIGHT);
+					currentSegment = new Segment(SEGMENT_ORIENTATION.RIGHT, this);
 					currentSegment.setEnd(x, y, POINT_ORIENTATION.SE);
 				}
 
@@ -231,7 +204,7 @@ MapEdge.prototype._generate = function () {
 					this.segments.push(currentSegment);
 
 					// and start left segment
-					currentSegment = new Segment(SEGMENT_ORIENTATION.LEFT);
+					currentSegment = new Segment(SEGMENT_ORIENTATION.LEFT, this);
 					currentSegment.setStart(x, y, POINT_ORIENTATION.SO);
 				}
 
@@ -243,18 +216,7 @@ MapEdge.prototype._generate = function () {
 	this._initCorners();
 };
 
-var CAST_PER_CORNER_ORIENTATION = {};
-
-var CAST_PARAM_NE = { s1: SEGMENT_ORIENTATION.DOWN, s2: SEGMENT_ORIENTATION.LEFT,  x:  1, y: -1, listId: POINT_ORIENTATION.NE };
-var CAST_PARAM_NO = { s1: SEGMENT_ORIENTATION.DOWN, s2: SEGMENT_ORIENTATION.RIGHT, x: -1, y: -1, listId: POINT_ORIENTATION.NO };
-var CAST_PARAM_SE = { s1: SEGMENT_ORIENTATION.UP,   s2: SEGMENT_ORIENTATION.LEFT,  x:  1, y:  1, listId: POINT_ORIENTATION.SE };
-var CAST_PARAM_SO = { s1: SEGMENT_ORIENTATION.UP,   s2: SEGMENT_ORIENTATION.RIGHT, x: -1, y:  1, listId: POINT_ORIENTATION.SO };
-
-CAST_PER_CORNER_ORIENTATION[POINT_ORIENTATION.NO] = [CAST_PARAM_NE, CAST_PARAM_SO];
-CAST_PER_CORNER_ORIENTATION[POINT_ORIENTATION.NE] = [CAST_PARAM_NO, CAST_PARAM_SE];
-CAST_PER_CORNER_ORIENTATION[POINT_ORIENTATION.SO] = [CAST_PARAM_NO, CAST_PARAM_SE];
-CAST_PER_CORNER_ORIENTATION[POINT_ORIENTATION.SE] = [CAST_PARAM_NE, CAST_PARAM_SO];
-
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 MapEdge.prototype._initCorners = function () {
 	for (var i = this.corners.length - 1; i >= 0; i--) {
 		var corner = this.corners[i];
@@ -269,6 +231,7 @@ MapEdge.prototype._initCorners = function () {
 	}
 };
 
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 MapEdge.prototype._getCornerCast = function (corner, params) {
 	for (var i = 0; i < this.segments.length; i++) {
 		var segment = this.segments[i];
@@ -299,6 +262,7 @@ MapEdge.prototype._getPolygonStart = function (downCast, raycasts) {
 	return previous;
 };
 
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 MapEdge.prototype._getDownwardRaycast = function (x, y) {
 	// to get the first point of polygon, we cast a ray down from source
 	// because the ray is horizontal, the raycast formula can be simplified
@@ -321,6 +285,7 @@ function sortRay(a, b) {
 	return a.ts - b.ts;
 }
 
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 MapEdge.prototype.getRaycasts = function (x, y) {
 	var source     = { x: x, y: y };
 	var cornerMap  = {}; // all raycasts, mapped by its corner id
@@ -351,6 +316,7 @@ MapEdge.prototype.getRaycasts = function (x, y) {
 	};
 };
 
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 MapEdge.prototype.getCastPolygon = function (x, y) {
 	// TODO: enable bounding box
 	var downCast = this._getDownwardRaycast(x, y);
@@ -440,4 +406,5 @@ MapEdge.prototype.getCastPolygon = function (x, y) {
 	return polygon;
 };
 
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 module.exports = MapEdge;

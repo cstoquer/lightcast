@@ -1,4 +1,4 @@
-var constants  = require('./constants');
+var constants = require('./constants');
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 var POINT_TYPE = constants.POINT_TYPE;
@@ -86,7 +86,6 @@ Point.prototype.raycast = function (source, directionId) {
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 Point.prototype.optimizeCast = function () {
-	// return
 	for (var direction = 0; direction < 4; direction++) {
 		var segments = this.cast[direction];
 		// going backward because segments can be removed
@@ -161,4 +160,3 @@ Point.prototype.isSegmentCovered = function (segmentTest) {
 
 	return false;
 };
-
