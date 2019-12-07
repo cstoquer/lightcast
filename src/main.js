@@ -1,10 +1,10 @@
 var MapEdge = require('./MapEdge');
-var Texture = require('Texture');
+var Texture = require('pixelbox/Texture');
 
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-var TILE_W = settings.tileSize[0];
-var TILE_H = settings.tileSize[1];
+var TILE_W = settings.tileSize.width;
+var TILE_H = settings.tileSize.height;
 
 function drawPoints(points, color) {
 	for (var i = 0; i < points.length; i++) {
@@ -84,7 +84,7 @@ var offscreenTexture = new Texture(settings.screen.width, settings.screen.height
 // draw(map);
 
 
-require('pointer').onMove(function (x, y) {
+require('pixelbox/pointer').onMove(function (x, y) {
 
 	if (map.get(~~(x / TILE_W), ~~(y / TILE_H))) {
 		// we're inside a tile: don't cast light
