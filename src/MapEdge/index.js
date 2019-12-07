@@ -20,6 +20,7 @@ function MapEdge(map) {
 	this._generate();
 }
 
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 MapEdge.prototype._hasTile = function (x, y) {
 	// outside of map is considered being tile
 	if (x < 0 || x >= this.map.width || y < 0 || y >= this.map.height) return true;
@@ -69,24 +70,24 @@ MapEdge.prototype._generate = function () {
 				// new segment if both tile are different
 				if (tile && !before) {
 					// start up segment
-					var orientation = this._hasTile(x - 1, y) ? POINT_ORIENTATION.NE : POINT_ORIENTATION.NO;
+					var orientation = this._hasTile(x - 1, y) ? POINT_ORIENTATION.NE : POINT_ORIENTATION.NW;
 					currentSegment = new Segment(SEGMENT_ORIENTATION.UP, this);
 					currentSegment.setEnd(x, y, orientation);
 
 					// potential N-O corner
-					if (orientation === POINT_ORIENTATION.NO) {
+					if (orientation === POINT_ORIENTATION.NW) {
 						var corner = currentSegment.end;
 						corner.type = POINT_TYPE.CORNER;
 						this.corners.push(corner);
 					}
 				} else if (!tile && before) {
 					// start down segment
-					var orientation = this._hasTile(x - 1, y) ? POINT_ORIENTATION.SE : POINT_ORIENTATION.SO;
+					var orientation = this._hasTile(x - 1, y) ? POINT_ORIENTATION.SE : POINT_ORIENTATION.SW;
 					currentSegment = new Segment(SEGMENT_ORIENTATION.DOWN, this);
 					currentSegment.setStart(x, y, orientation);
 
 					// potential S-O corner
-					if (orientation === POINT_ORIENTATION.SO) {
+					if (orientation === POINT_ORIENTATION.SW) {
 						var corner = currentSegment.start;
 						corner.type = POINT_TYPE.CORNER;
 						this.corners.push(corner);
@@ -96,7 +97,7 @@ MapEdge.prototype._generate = function () {
 			} else if (currentSegment.orientation === SEGMENT_ORIENTATION.UP) {
 				if (tile === before) {
 					// both tile are both empty or full => stop up segment
-					var orientation = tile ? POINT_ORIENTATION.NO : POINT_ORIENTATION.NE;
+					var orientation = tile ? POINT_ORIENTATION.NW : POINT_ORIENTATION.NE;
 					currentSegment.setStart(x, y, orientation);
 					this.segments.push(currentSegment);
 					this.upSegments.push(currentSegment);
@@ -111,7 +112,7 @@ MapEdge.prototype._generate = function () {
 					currentSegment = null;
 				} else if (before && !tile) {
 					// stop up segment
-					currentSegment.setStart(x, y, POINT_ORIENTATION.NO);
+					currentSegment.setStart(x, y, POINT_ORIENTATION.NW);
 					this.segments.push(currentSegment);
 					this.upSegments.push(currentSegment);
 
@@ -123,7 +124,7 @@ MapEdge.prototype._generate = function () {
 			} else if (currentSegment.orientation === SEGMENT_ORIENTATION.DOWN) {
 				if (tile === before) {
 					// both tile are both empty or full => stop down segment
-					var orientation = tile ? POINT_ORIENTATION.SO : POINT_ORIENTATION.SE;
+					var orientation = tile ? POINT_ORIENTATION.SW : POINT_ORIENTATION.SE;
 					currentSegment.setEnd(x, y, orientation);
 					this.segments.push(currentSegment);
 
@@ -137,7 +138,7 @@ MapEdge.prototype._generate = function () {
 					currentSegment = null;
 				} else if (!before && tile) {
 					// stop down segment
-					currentSegment.setEnd(x, y, POINT_ORIENTATION.SO);
+					currentSegment.setEnd(x, y, POINT_ORIENTATION.SW);
 					this.segments.push(currentSegment);
 
 					// and start up segment
@@ -164,7 +165,7 @@ MapEdge.prototype._generate = function () {
 				// new segment if both tile are different
 				if (tile && !before) {
 					// start left segment
-					var orientation = this._hasTile(x, y - 1) ? POINT_ORIENTATION.SO : POINT_ORIENTATION.NO;
+					var orientation = this._hasTile(x, y - 1) ? POINT_ORIENTATION.SW : POINT_ORIENTATION.NW;
 					currentSegment = new Segment(SEGMENT_ORIENTATION.LEFT, this);
 					currentSegment.setStart(x, y, orientation);
 				} else if (!tile && before) {
@@ -177,13 +178,13 @@ MapEdge.prototype._generate = function () {
 			} else if (currentSegment.orientation === SEGMENT_ORIENTATION.LEFT) {
 				if (tile === before) {
 					// both tile are both empty or full => stop left segment
-					var orientation = tile ? POINT_ORIENTATION.NO : POINT_ORIENTATION.SO;
+					var orientation = tile ? POINT_ORIENTATION.NW : POINT_ORIENTATION.SW;
 					currentSegment.setEnd(x, y, orientation);
 					this.segments.push(currentSegment);
 					currentSegment = null;
 				} else if (before && !tile) {
 					// stop left segment
-					currentSegment.setEnd(x, y, POINT_ORIENTATION.NO);
+					currentSegment.setEnd(x, y, POINT_ORIENTATION.NW);
 					this.segments.push(currentSegment);
 
 					// and start right segment
@@ -205,7 +206,7 @@ MapEdge.prototype._generate = function () {
 
 					// and start left segment
 					currentSegment = new Segment(SEGMENT_ORIENTATION.LEFT, this);
-					currentSegment.setStart(x, y, POINT_ORIENTATION.SO);
+					currentSegment.setStart(x, y, POINT_ORIENTATION.SW);
 				}
 
 			} else {
@@ -296,7 +297,7 @@ MapEdge.prototype.getRaycasts = function (x, y) {
 
 		// determine in which quadran the corner belongs
 		var directionId = corner.x < x
-			? (corner.y < y ? POINT_ORIENTATION.NO : POINT_ORIENTATION.SO)
+			? (corner.y < y ? POINT_ORIENTATION.NW : POINT_ORIENTATION.SW)
 			: (corner.y < y ? POINT_ORIENTATION.NE : POINT_ORIENTATION.SE);
 
 		if (corner.cast[directionId].length === 0) continue; // corner can't be cast in that direction
