@@ -5,16 +5,16 @@ var POINT_TYPE                  = constants.POINT_TYPE;
 var CAST_PER_CORNER_ORIENTATION = constants.CAST_PER_CORNER_ORIENTATION;
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-function rayCast(sourcePoint, targetPoint, segment) {
+function rayCast(sourcePoint, targetPoint, wall) {
 	// alias defini†ions
 	var rpx = sourcePoint.x;
 	var rpy = sourcePoint.y;
 
-	var spx = segment.start.x;
-	var spy = segment.start.y;
+	var spx = wall.start.x;
+	var spy = wall.start.y;
 
-	var sdx = segment.dx;
-	var sdy = segment.dy;
+	var sdx = wall.dx;
+	var sdy = wall.dy;
 
 	// ray direction
 	var rdx = targetPoint.x - rpx;
@@ -45,84 +45,86 @@ function rayCast(sourcePoint, targetPoint, segment) {
 function Corner(x, y, orientation, id) {
 	this.x           = x || 0;
 	this.y           = y || 0;
-	this.start       = null; // the segment this point starts
-	this.end         = null; // the segment this point ends
+	this.start       = null; // the wall this corner starts
+	this.end         = null; // the wall this corner ends
 	this.type        = POINT_TYPE.GROOVE;
 	this.orientation = orientation;
 	this.id          = id;
 
-	// when point is a corner, lists of segments this corner can cast to
+	// when point is a corner, lists of walls this corner can cast to
 	this.cast = [ [], [], [], [] ];
 }
 
 module.exports = Corner;
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-Corner.prototype.initAsCorner = function (segments) {
+Corner.prototype.initAsCorner = function (walls) {
 	this.type = POINT_TYPE.CORNER;
 	var params = CAST_PER_CORNER_ORIENTATION[this.orientation];
 
-	this._initCastableSegments(segments, params[0]);
-	this._initCastableSegments(segments, params[1]);
+	this._initCastableSegments(walls, params[0]);
+	this._initCastableSegments(walls, params[1]);
 
 	// optimize corner list by removing edges on which point can never be cast
-	this.optimizeCast();
+	this._optimizeCast();
 }
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 /**
- * Prepare the list of castable segments for a diagonal direction
+ * Prepare the list of castable walls for a diagonal direction
  *
- * @param {Segment[]} segments - all wall of the map
+ * @param {Segment[]} walls - all walls of the map
  * @param {Object} params - cast parameters (see `constants.js`)
  */
-Corner.prototype._initCastableSegments = function (segments, params) {
-	for (var i = 0; i < segments.length; i++) {
-		var segment = segments[i];
-		if (segment.orientation !== params.s1 && segment.orientation !== params.s2) continue;
-		if ((params.x * segment.start.x > params.x * this.x && params.y * segment.start.y > params.y * this.y)
-		 || (params.x * segment.end.x   > params.x * this.x && params.y * segment.end.y   > params.y * this.y)) {
-			this.cast[params.listId].push(segment);
+Corner.prototype._initCastableSegments = function (walls, params) {
+	for (var i = 0; i < walls.length; i++) {
+		var wall = walls[i];
+		if (wall.orientation !== params.s1 && wall.orientation !== params.s2) continue;
+		if ((params.x * wall.start.x > params.x * this.x && params.y * wall.start.y > params.y * this.y)
+		 || (params.x * wall.end.x   > params.x * this.x && params.y * wall.end.y   > params.y * this.y)) {
+			this.cast[params.listId].push(wall);
 		}
 	}
 };
 
+var INITIAL_CLOSEST_CAST = { tr: Infinity };
+
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 Corner.prototype.projectRaycast = function (source, directionId) {
-	var closestCast = { tr: Infinity };
-	var closestSegment = null;
+	var closestCast = INITIAL_CLOSEST_CAST;
+	var closestWall = null;
 
-	var segments = this.cast[directionId];
-	for (var i = 0; i < segments.length; i++) {
-		var segment = segments[i];
-		var cast = rayCast(source, this, segment);
+	var walls = this.cast[directionId];
+	for (var i = 0; i < walls.length; i++) {
+		var wall = walls[i];
+		var cast = rayCast(source, this, wall);
 		if (!cast) continue; // no cast
 		// if (cast.tr < 0) continue; // cast before target (should never happen)
-		if (cast.ts < 0 || cast.ts > 1) continue; // cast outside of segment
+		if (cast.ts < 0 || cast.ts > 1) continue; // cast outside of wall
 
 		// keep the closest cast
 		if (cast.tr < closestCast.tr) {
 			closestCast = cast;
-			closestSegment = segment;
+			closestWall = wall;
 		}
 	}
 
-	if (!closestSegment) return null;
+	if (!closestWall) return null;
 
 	closestCast.point = this;
-	closestCast.segment = closestSegment;
+	closestCast.wall  = closestWall;
 
 	return closestCast;
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-Corner.prototype.optimizeCast = function () {
+Corner.prototype._optimizeCast = function () {
 	for (var direction = 0; direction < 4; direction++) {
-		var segments = this.cast[direction];
-		// going backward because segments can be removed
-		for (var i = segments.length - 1; i >= 0; i--) {
-			if (this.isSegmentCovered(segments[i])) {
-				segments.splice(i, 1);
+		var walls = this.cast[direction];
+		// iterate backward because walls can be removed
+		for (var i = walls.length - 1; i >= 0; i--) {
+			if (this._isWallCovered(walls[i])) {
+				walls.splice(i, 1);
 			}
 		}
 	}
@@ -134,23 +136,23 @@ function sortCoverage(a, b) {
 }
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-Corner.prototype.isSegmentCovered = function (segmentTest) {
+Corner.prototype._isWallCovered = function (wallTest) {
 	var coverage = [];
 
-	// remove part of the segment outside any cast
+	// remove part of the wall outside any cast
 
 	// TODO
 
-	// cast all other segments to this one
+	// cast all other walls to this one
 	for (var direction = 0; direction < 4; direction++) {
-		var segments = this.cast[direction];
-		for (var i = 0; i < segments.length; i++) {
-			var segment = segments[i];
-			if (segment === segmentTest) continue;
+		var walls = this.cast[direction];
+		for (var i = 0; i < walls.length; i++) {
+			var wall = walls[i];
+			if (wall === wallTest) continue;
 
 			var tsStart, tsEnd;
 
-			var rayStart = rayCast(this, segment.start, segmentTest);
+			var rayStart = rayCast(this, wall.start, wallTest);
 			if (!rayStart) {
 				tsStart = -Infinity;
 			} else {
@@ -159,7 +161,7 @@ Corner.prototype.isSegmentCovered = function (segmentTest) {
 				else if (rayStart.tr < 1) continue;
 			}
 
-			var rayEnd = rayCast(this, segment.end, segmentTest);
+			var rayEnd = rayCast(this, wall.end, wallTest);
 			if (!rayEnd) {
 				tsEnd = 0;
 				// continue;
@@ -179,14 +181,14 @@ Corner.prototype.isSegmentCovered = function (segmentTest) {
 	coverage.sort(sortCoverage);
 
 	// check if it's entirely covered
-	if (coverage[0][0] > 0) return false; // begining of segment is not covered
+	if (coverage[0][0] > 0) return false; // begining of wall is not covered
 	var max = coverage[0][1];
-	if (max >= 1) return true; // whole segment covered
+	if (max >= 1) return true; // whole wall covered
 
 	for (var i = 1; i < coverage.length; i++) {
 		if (max < coverage[i][0]) return false; // there is a hole
 		max = coverage[i][1];
-		if (max >= 1) return true; // whole segment covered
+		if (max >= 1) return true; // whole wall covered
 	}
 
 	return false;

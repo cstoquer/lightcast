@@ -1,17 +1,17 @@
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-function Segment(orientation, mapEdge) {
-	this.id          = mapEdge.getSegmentId();
-	this.orientation = orientation;    // segment's normal direction
+function Wall(orientation, mapEdge) {
+	this.id          = mapEdge.getWallId();
+	this.orientation = orientation;    // wall's normal direction
 	this.start       = null;           // Point
 	this.end         = null;           // Point
 	this.dx          = 0;
 	this.dy          = 0;
-	this._mapEdge    = mapEdge;        // reference to MapEdge that created the segment
+	this._mapEdge    = mapEdge;        // reference to MapEdge instance
 }
-module.exports = Segment;
+module.exports = Wall;
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-Segment.prototype.setEnd = function (x, y, orientation) {
+Wall.prototype.setEnd = function (x, y, orientation) {
 	var corner = this._mapEdge.getCorner(x, y, orientation); // TODO: checkboard corners
 	this.end  = corner;
 	corner.end = this;
@@ -19,7 +19,7 @@ Segment.prototype.setEnd = function (x, y, orientation) {
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-Segment.prototype.setStart = function (x, y, orientation) {
+Wall.prototype.setStart = function (x, y, orientation) {
 	var corner   = this._mapEdge.getCorner(x, y, orientation); // TODO: checkboard corners
 	this.start  = corner;
 	corner.start = this;
@@ -27,7 +27,7 @@ Segment.prototype.setStart = function (x, y, orientation) {
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-Segment.prototype._computeDirection = function () {
+Wall.prototype._computeDirection = function () {
 	if (!this.start || !this.end) return;
 	this.dx = this.end.x - this.start.x;
 	this.dy = this.end.y - this.start.y;
