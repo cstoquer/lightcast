@@ -1,7 +1,8 @@
 var constants = require('./constants');
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-var POINT_TYPE = constants.POINT_TYPE;
+var POINT_TYPE                  = constants.POINT_TYPE;
+var CAST_PER_CORNER_ORIENTATION = constants.CAST_PER_CORNER_ORIENTATION;
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 function rayCast(sourcePoint, targetPoint, segment) {
@@ -41,7 +42,7 @@ function rayCast(sourcePoint, targetPoint, segment) {
 }
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-function Point(x, y, orientation, id) {
+function Corner(x, y, orientation, id) {
 	this.x           = x || 0;
 	this.y           = y || 0;
 	this.start       = null; // the segment this point starts
@@ -54,10 +55,40 @@ function Point(x, y, orientation, id) {
 	this.cast = [ [], [], [], [] ];
 }
 
-module.exports = Point;
+module.exports = Corner;
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-Point.prototype.raycast = function (source, directionId) {
+Corner.prototype.initAsCorner = function (segments) {
+	this.type = POINT_TYPE.CORNER;
+	var params = CAST_PER_CORNER_ORIENTATION[this.orientation];
+
+	this._initCastableSegments(segments, params[0]);
+	this._initCastableSegments(segments, params[1]);
+
+	// optimize corner list by removing edges on which point can never be cast
+	this.optimizeCast();
+}
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+/**
+ * Prepare the list of castable segments for a diagonal direction
+ *
+ * @param {Segment[]} segments - all wall of the map
+ * @param {Object} params - cast parameters (see `constants.js`)
+ */
+Corner.prototype._initCastableSegments = function (segments, params) {
+	for (var i = 0; i < segments.length; i++) {
+		var segment = segments[i];
+		if (segment.orientation !== params.s1 && segment.orientation !== params.s2) continue;
+		if ((params.x * segment.start.x > params.x * this.x && params.y * segment.start.y > params.y * this.y)
+		 || (params.x * segment.end.x   > params.x * this.x && params.y * segment.end.y   > params.y * this.y)) {
+			this.cast[params.listId].push(segment);
+		}
+	}
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+Corner.prototype.projectRaycast = function (source, directionId) {
 	var closestCast = { tr: Infinity };
 	var closestSegment = null;
 
@@ -85,7 +116,7 @@ Point.prototype.raycast = function (source, directionId) {
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-Point.prototype.optimizeCast = function () {
+Corner.prototype.optimizeCast = function () {
 	for (var direction = 0; direction < 4; direction++) {
 		var segments = this.cast[direction];
 		// going backward because segments can be removed
@@ -103,7 +134,7 @@ function sortCoverage(a, b) {
 }
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-Point.prototype.isSegmentCovered = function (segmentTest) {
+Corner.prototype.isSegmentCovered = function (segmentTest) {
 	var coverage = [];
 
 	// remove part of the segment outside any cast

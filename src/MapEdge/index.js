@@ -1,34 +1,25 @@
 var SortedList = require('./SortedList');
-var Point      = require('./Point');
+var Corner     = require('./Corner');
 var Segment    = require('./Segment');
 var constants  = require('./constants');
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-var SEGMENT_ORIENTATION         = constants.SEGMENT_ORIENTATION;
-var POINT_TYPE                  = constants.POINT_TYPE;
-var POINT_ORIENTATION           = constants.POINT_ORIENTATION;
-var CAST_PER_CORNER_ORIENTATION = constants.CAST_PER_CORNER_ORIENTATION;
+var SEGMENT_ORIENTATION = constants.SEGMENT_ORIENTATION;
+var POINT_ORIENTATION   = constants.POINT_ORIENTATION;
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 function MapEdge(map) {
 	this.map        = map;
-	this.points     = {};
+	this.cornerMap  = {};
 	this.corners    = [];
 	this.segments   = [];
 	this.upSegments = [];
 
-	this._generate();
+	this._prepare();
 }
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-MapEdge.prototype._hasTile = function (x, y) {
-	// outside of map is considered being tile
-	if (x < 0 || x >= this.map.width || y < 0 || y >= this.map.height) return true;
-	return !!this.map.get(x, y);
-};
-
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-function getPointId(x, y, orientation) {
+function getCornerId(x, y, orientation) {
 	return 'p:' + x + ':' + y + ':' + orientation;
 }
 
@@ -38,18 +29,36 @@ MapEdge.prototype.getSegmentId = function () {
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-MapEdge.prototype.getPoint = function(x, y, orientation) {
+MapEdge.prototype.getCorner = function(x, y, orientation) {
 	// TODO: be able to separate the checkboard corners
-	var id = getPointId(x, y, orientation);
-	var point = this.points[id];
-	if (!point) point = this.points[id] = new Point(x, y, orientation, id);
-	return point;
+	var id = getCornerId(x, y, orientation);
+	var corner = this.cornerMap[id];
+	if (!corner) corner = this.cornerMap[id] = new Corner(x, y, orientation, id);
+	return corner;
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-MapEdge.prototype._generate = function () {
+MapEdge.prototype._hasTile = function (x, y) {
+	// outside of map is considered being tile
+	if (x < 0 || x >= this.map.width || y < 0 || y >= this.map.height) return true;
+	return !!this.map.get(x, y);
+};
+
+//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+/**
+ * Prepare map for fast raycast calculation.
+ * Calculate the following:
+ *
+ * - `corners` : points at the edge of tiles. point coordinates are set in tile unit.
+ *               Point projects raycast in 2 possible directions according to its orientation.
+ *
+ * - `segments` : edges (walls) of the map.
+ *
+ * - `upSegments` : up orientated map edges. upSegments are sorted by vertical position.
+ *                  This is used to get the first point of the raycast polygon.
+ */
+MapEdge.prototype._prepare = function () {
 	var map = this.map;
-	this.points = {};
 	this._segmentId = 0;
 
 
@@ -59,7 +68,7 @@ MapEdge.prototype._generate = function () {
 
 	// ----------------------------------------------
 	// generate horizontal segments
-	// also get map corners in this pass only
+	// also get map corners during this pass only
 
 	for (var y = 0; y <= map.height; y++) {
 		currentSegment = null;
@@ -74,10 +83,9 @@ MapEdge.prototype._generate = function () {
 					currentSegment = new Segment(SEGMENT_ORIENTATION.UP, this);
 					currentSegment.setEnd(x, y, orientation);
 
-					// potential N-O corner
+					// potential N-W corner
 					if (orientation === POINT_ORIENTATION.NW) {
 						var corner = currentSegment.end;
-						corner.type = POINT_TYPE.CORNER;
 						this.corners.push(corner);
 					}
 				} else if (!tile && before) {
@@ -89,7 +97,6 @@ MapEdge.prototype._generate = function () {
 					// potential S-O corner
 					if (orientation === POINT_ORIENTATION.SW) {
 						var corner = currentSegment.start;
-						corner.type = POINT_TYPE.CORNER;
 						this.corners.push(corner);
 					}
 				}
@@ -105,7 +112,6 @@ MapEdge.prototype._generate = function () {
 					// potential N-E corner
 					if (orientation === POINT_ORIENTATION.NE) {
 						var corner = currentSegment.start;
-						corner.type = POINT_TYPE.CORNER;
 						this.corners.push(corner);
 					}
 
@@ -131,7 +137,6 @@ MapEdge.prototype._generate = function () {
 					// potential S-E corner
 					if (orientation === POINT_ORIENTATION.SE) {
 						var corner = currentSegment.end;
-						corner.type = POINT_TYPE.CORNER;
 						this.corners.push(corner);
 					}
 
@@ -210,37 +215,17 @@ MapEdge.prototype._generate = function () {
 				}
 
 			} else {
-				console.error('Something went horribly wrong!');
+				// should never reach here
+				console.error('Something went wrong!');
 			}
 		}
 	}
-	this._initCorners();
-};
 
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-MapEdge.prototype._initCorners = function () {
+	// init corners
 	for (var i = this.corners.length - 1; i >= 0; i--) {
 		var corner = this.corners[i];
-		var params = CAST_PER_CORNER_ORIENTATION[corner.orientation];
-		this._getCornerCast(corner, params[0]);
-		this._getCornerCast(corner, params[1]);
-
-		// optimize corner list by removing edges on which point can never be cast
-		corner.optimizeCast();
-
+		corner.initAsCorner(this.segments);
 		// TODO: if all cast list are empty, remove this point from corners
-	}
-};
-
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-MapEdge.prototype._getCornerCast = function (corner, params) {
-	for (var i = 0; i < this.segments.length; i++) {
-		var segment = this.segments[i];
-		if (segment.orientation !== params.s1 && segment.orientation !== params.s2) continue;
-		if ((params.x * segment.start.x > params.x * corner.x && params.y * segment.start.y > params.y * corner.y)
-		 || (params.x * segment.end.x   > params.x * corner.x && params.y * segment.end.y   > params.y * corner.y)) {
-			corner.cast[params.listId].push(segment);
-		}
 	}
 };
 
@@ -287,9 +272,13 @@ function sortRay(a, b) {
 }
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-MapEdge.prototype.getRaycasts = function (x, y) {
+/**
+ * Get all raycasts from a source point.
+ * Raycast start from a corner and ends into a wall (segment).
+ */
+MapEdge.prototype._getRaycasts = function (x, y) {
 	var source     = { x: x, y: y };
-	var cornerMap  = {}; // all raycasts, mapped by its corner id
+	var cornerMap  = {}; // all raycasts, mapped by their corner id
 	var segmentMap = {}; // orderd list of raycasts in each segments
 
 	for (var i = 0; i < this.corners.length; i++) {
@@ -302,7 +291,7 @@ MapEdge.prototype.getRaycasts = function (x, y) {
 
 		if (corner.cast[directionId].length === 0) continue; // corner can't be cast in that direction
 
-		var raycast = corner.raycast(source, directionId);
+		var raycast = corner.projectRaycast(source, directionId);
 		if (!raycast) continue; // corner doesn't cast to anything from this source point
 
 		cornerMap[corner.id] = raycast;
@@ -318,11 +307,15 @@ MapEdge.prototype.getRaycasts = function (x, y) {
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+/**
+ * @param {number} x - raycast source point x coord (in tile unit)
+ * @param {number} y - raycast source point y coord (in tile unit)
+ */
 MapEdge.prototype.getCastPolygon = function (x, y) {
 	// TODO: enable bounding box
 	var downCast = this._getDownwardRaycast(x, y);
 	if (!downCast) return null;
-	var raycasts = this.getRaycasts(x, y);
+	var raycasts = this._getRaycasts(x, y);
 	var startPoint = this._getPolygonStart(downCast, raycasts);
 	if (!startPoint) return null;
 

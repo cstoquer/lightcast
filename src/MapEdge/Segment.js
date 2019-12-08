@@ -12,17 +12,17 @@ module.exports = Segment;
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 Segment.prototype.setEnd = function (x, y, orientation) {
-	var point = this._mapEdge.getPoint(x, y, orientation); // TODO: checkboard points
-	this.end  = point;
-	point.end = this;
+	var corner = this._mapEdge.getCorner(x, y, orientation); // TODO: checkboard corners
+	this.end  = corner;
+	corner.end = this;
 	this._computeDirection();
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 Segment.prototype.setStart = function (x, y, orientation) {
-	var point   = this._mapEdge.getPoint(x, y, orientation); // TODO: checkboard points
-	this.start  = point;
-	point.start = this;
+	var corner   = this._mapEdge.getCorner(x, y, orientation); // TODO: checkboard corners
+	this.start  = corner;
+	corner.start = this;
 	this._computeDirection();
 };
 
