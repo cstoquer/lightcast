@@ -1,0 +1,74 @@
+{
+	"name": "lightcast",
+	"version": "2.0.0",
+	"screen": {
+		"width": 128,
+		"height": 128,
+		"pixelSize": {
+			"width": 4,
+			"height": 4
+		},
+		"fullscreen": false
+	},
+	"tileSize": {
+		"width": 8,
+		"height": 8
+	},
+	"palette": {
+		"name": "pico8",
+		"colors": [
+			"#000000",
+			"#FFF1E8",
+			"#008751",
+			"#AB5236",
+			"#7E2553",
+			"#5F574F",
+			"#29ADFF",
+			"#00E756",
+			"#FFA300",
+			"#FF77A8",
+			"#C2C3C7",
+			"#83769C",
+			"#FFFF27",
+			"#FFCCAA",
+			"#1D2B53",
+			"#FF004D"
+		]
+	},
+	"controls": {
+		"up": 38,
+		"down": 40,
+		"left": 37,
+		"right": 39,
+		"A": 32,
+		"B": 88
+	},
+	"gamepad": {
+		"analogToDpad": true,
+		"deadZone": 0.5
+	},
+	"touchEvent": {
+		"multiTouch": false,
+		"disableContextMenu": false,
+		"hideMousePointer": false
+	},
+	"loader": {
+		"colors": [
+			"#000",
+			"#FFF"
+		],
+		"custom": ""
+	},
+	"components": {
+		"pixelboxCore": true,
+		"keyboard": true,
+		"AudioManager": true,
+		"TINA": true
+	},
+	"buildOptions": {
+		"scriptLanguage": "ES5",
+		"hasAtlas": false,
+		"tokenify": []
+	},
+	"appid": "xl3WcqXNVmwLe2rE"
+}

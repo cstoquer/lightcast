@@ -1,10 +1,10 @@
 var MapEdge = require('./MapEdge');
-var Texture = require('Texture');
+var Texture = require('pixelbox/Texture');
 
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-var TILE_W = settings.tileSize[0];
-var TILE_H = settings.tileSize[1];
+var TILE_W = settings.tileSize.width;
+var TILE_H = settings.tileSize.height;
 
 function drawPoints(points, color) {
 	for (var i = 0; i < points.length; i++) {
@@ -14,13 +14,13 @@ function drawPoints(points, color) {
 	}
 }
 
-function drawSegments(segments, color) {
+function drawSegments(walls, color) {
 	var ctx = $screen.ctx;
 	pen(color || 15);
-	for (var i = 0; i < segments.length; i++) {
-		var segment = segments[i];
-		var a = segment.start;
-		var b = segment.end;
+	for (var i = 0; i < walls.length; i++) {
+		var wall = walls[i];
+		var a = wall.start;
+		var b = wall.end;
 		ctx.beginPath();
 		ctx.moveTo(a.x * TILE_W, a.y * TILE_H);
 		ctx.lineTo(b.x * TILE_W, b.y * TILE_H);
@@ -38,8 +38,8 @@ function drawEdgeLoop(point) {
 	ctx.moveTo(point.x * TILE_W, point.y * TILE_H);
 
 	do {
-		var segment = point.start;
-		var point = segment.end;
+		var wall = point.start;
+		var point = wall.end;
 		ctx.lineTo(point.x * TILE_W, point.y * TILE_H);
 
 	} while (point !== start && point.start);
@@ -63,9 +63,10 @@ function drawPolygon(points, texture) {
 		ctx.lineTo(point.x * TILE_W, point.y * TILE_H);
 	}
 
+	ctx.strokeStyle = '#FF0';
 	ctx.closePath();
 	ctx.fill();
-	ctx.stroke();
+	// ctx.stroke();
 	paper(0);
 }
 
@@ -84,7 +85,7 @@ var offscreenTexture = new Texture(settings.screen.width, settings.screen.height
 // draw(map);
 
 
-require('pointer').onMove(function (x, y) {
+require('pixelbox/pointer').onMove(function (x, y) {
 
 	if (map.get(~~(x / TILE_W), ~~(y / TILE_H))) {
 		// we're inside a tile: don't cast light
@@ -94,13 +95,14 @@ require('pointer').onMove(function (x, y) {
 		return;
 	}
 
-	// drawSegments(mapEdges.segments);
+	// drawSegments(mapEdges.walls);
 
 	var polygon = mapEdges.getCastPolygon(x / TILE_W + EPSILON, y / TILE_H + EPSILON);
 	if (!polygon) return;
+	// console.log('>>> polygon', polygon)
 
 	cls();
-	draw(map);
+	// draw(map);
 	// drawPolygon(polygon);
 
 	offscreenTexture.clear();
@@ -129,7 +131,7 @@ exports.update = function () {
 	cls();
 	timer = 0;
 	cornerIndex = ++cornerIndex % mapEdges.corners.length;
-	drawSegments(mapEdges.segments, 5);
+	drawSegments(mapEdges.walls, 5);
 	var p = mapEdges.corners[cornerIndex];
 	drawPoints([p]);
 	drawSegments(p.cast[0], 6);
