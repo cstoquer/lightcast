@@ -21,19 +21,14 @@ function MapEdge(map) {
 module.exports = MapEdge;
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-function getCornerId(x, y, orientation) {
-	return 'p:' + x + ':' + y + ':' + orientation;
-}
-
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-MapEdge.prototype.getWallId = function () {
+MapEdge.prototype.getNewWallId = function () {
 	return this._wallId++;
 };
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 MapEdge.prototype.getCorner = function(x, y, orientation) {
 	// TODO: be able to separate the checkboard corners
-	var id = getCornerId(x, y, orientation);
+	var id = 'p:' + x + ':' + y + ':' + orientation;
 	var corner = this.cornerMap[id];
 	if (!corner) corner = this.cornerMap[id] = new Corner(x, y, orientation, id);
 	return corner;
@@ -285,7 +280,7 @@ MapEdge.prototype._getDownwardRaycast = function (x, y) {
  *
  * @returns {RaycastsResult} - raycasts
  */
-MapEdge.prototype._getRaycasts = function (x, y) {
+MapEdge.prototype._getAllCornersRaycasts = function (x, y) {
 	var source   = { x: x, y: y };
 	var raycasts = new RaycastsResult();
 
@@ -317,7 +312,7 @@ MapEdge.prototype.getCastPolygon = function (x, y) {
 	// TODO: enable bounding box
 	var downCast = this._getDownwardRaycast(x, y);
 	if (!downCast) return null;
-	var raycasts = this._getRaycasts(x, y);
+	var raycasts = this._getAllCornersRaycasts(x, y);
 	var startPoint = this._getPolygonStart(downCast, raycasts);
 	if (!startPoint) return null;
 

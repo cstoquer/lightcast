@@ -1,35 +1,48 @@
 {
 	"state": {
+		"globals": {
+			"zoom": 2
+		},
 		"mapEditor": {
 			"x": 160,
-			"y": 21,
+			"y": 20,
 			"open": true,
 			"width": 392,
 			"height": 424,
 			"layers": [
 				{
 					"type": "map",
+					"id": "assets/maps.json:background"
+				},
+				{
+					"type": "map",
 					"id": "assets/maps.json:map"
 				}
 			]
 		},
-		"mapClipboard": null,
+		"mapClipboard": {},
 		"tilesheet": {
 			"x": 560,
-			"y": 21,
-			"open": true,
-			"zoom": 3
-		},
-		"tileBrush": null,
-		"palette": {
-			"x": 0,
-			"y": 261,
+			"y": 20,
 			"open": true
 		},
-		"spriter": null,
+		"tileBrush": {},
+		"palette": {
+			"x": 0,
+			"y": 260,
+			"open": true,
+			"width": 152,
+			"height": 152
+		},
+		"spriter": {
+			"x": 624,
+			"y": 292,
+			"open": false,
+			"zoom": 6
+		},
 		"assets": {
 			"x": 0,
-			"y": 21,
+			"y": 20,
 			"open": true,
 			"width": 152,
 			"height": 216,
@@ -37,11 +50,12 @@
 				"maps.json": {}
 			}
 		},
-		"console": null,
-		"settings": null,
+		"console": {},
+		"settings": {},
 		"menu": {
 			"devtool": true
-		}
+		},
+		"colorPicker": {}
 	},
 	"windowSize": {
 		"width": 1091,

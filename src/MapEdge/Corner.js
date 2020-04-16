@@ -1,45 +1,11 @@
 var constants = require('./constants');
+var castRay   = require('./castRay');
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 var POINT_TYPE                  = constants.POINT_TYPE;
 var CAST_PER_CORNER_ORIENTATION = constants.CAST_PER_CORNER_ORIENTATION;
 
-//▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
-function rayCast(sourcePoint, targetPoint, wall) {
-	// alias defini†ions
-	var rpx = sourcePoint.x;
-	var rpy = sourcePoint.y;
 
-	var spx = wall.start.x;
-	var spy = wall.start.y;
-
-	var sdx = wall.dx;
-	var sdy = wall.dy;
-
-	// ray direction
-	var rdx = targetPoint.x - rpx;
-	var rdy = targetPoint.y - rpy;
-
-	if (rdx === 0 && rdy === 0) return null; // source and target are same: no ray
-
-	// cast ratios
-	var r = sdx * rdy - sdy * rdx;
-	if (r === 0) return null; // ray and segent are parallel
-
-	var ts = (rdx * (spy - rpy) + rdy * (rpx - spx)) / r;
-	var tr;
-	if (rdx !== 0) {
-		tr = (spx + sdx * ts - rpx) / rdx;
-	} else {
-		tr = (spy + sdy * ts - rpy) / rdy;
-	}
-
-	// cast point
-	var x = spx + sdx * ts;
-	var y = spy + sdy * ts;
-
-	return { x: x, y: y, tr: tr, ts: ts };
-}
 
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 function Corner(x, y, orientation, id) {
@@ -97,7 +63,7 @@ Corner.prototype.projectRaycast = function (source, directionId) {
 	var walls = this.cast[directionId];
 	for (var i = 0; i < walls.length; i++) {
 		var wall = walls[i];
-		var cast = rayCast(source, this, wall);
+		var cast = castRay(source, this, wall);
 		if (!cast) continue; // no cast
 		// if (cast.tr < 0) continue; // cast before target (should never happen)
 		if (cast.ts < 0 || cast.ts > 1) continue; // cast outside of wall
@@ -152,7 +118,7 @@ Corner.prototype._isWallCovered = function (wallTest) {
 
 			var tsStart, tsEnd;
 
-			var rayStart = rayCast(this, wall.start, wallTest);
+			var rayStart = castRay(this, wall.start, wallTest);
 			if (!rayStart) {
 				tsStart = -Infinity;
 			} else {
@@ -161,7 +127,7 @@ Corner.prototype._isWallCovered = function (wallTest) {
 				else if (rayStart.tr < 1) continue;
 			}
 
-			var rayEnd = rayCast(this, wall.end, wallTest);
+			var rayEnd = castRay(this, wall.end, wallTest);
 			if (!rayEnd) {
 				tsEnd = 0;
 				// continue;

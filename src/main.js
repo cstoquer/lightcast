@@ -63,9 +63,10 @@ function drawPolygon(points, texture) {
 		ctx.lineTo(point.x * TILE_W, point.y * TILE_H);
 	}
 
+	ctx.strokeStyle = '#FF0';
 	ctx.closePath();
 	ctx.fill();
-	ctx.stroke();
+	// ctx.stroke();
 	paper(0);
 }
 
@@ -98,9 +99,10 @@ require('pixelbox/pointer').onMove(function (x, y) {
 
 	var polygon = mapEdges.getCastPolygon(x / TILE_W + EPSILON, y / TILE_H + EPSILON);
 	if (!polygon) return;
+	// console.log('>>> polygon', polygon)
 
 	cls();
-	draw(map);
+	// draw(map);
 	// drawPolygon(polygon);
 
 	offscreenTexture.clear();

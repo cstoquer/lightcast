@@ -1,6 +1,6 @@
 //▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
 function Wall(orientation, mapEdge) {
-	this.id          = mapEdge.getWallId();
+	this.id          = mapEdge.getNewWallId();
 	this.orientation = orientation;    // wall's normal direction
 	this.start       = null;           // Point
 	this.end         = null;           // Point
